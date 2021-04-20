@@ -35,10 +35,12 @@ window.addEventListener("message", async e => {
 	let rows_number = 0;
 	let sources = [];
 
-	if (user_lang == "enUS")
-		var series_rss = "https://www.crunchyroll.com/" + series_url.split("/")[3] + ".rss";
-	else
-		var series_rss = "https://www.crunchyroll.com/" + series_url.split("/")[4] + ".rss";
+        let dlSize = [];
+	let dlUrl = [];
+	for (let idx in r) {
+		dlSize[idx] = document.getElementById(r[idx] + "_down_size");
+		dlUrl[idx] = document.getElementById(r[idx] + "_down_url");
+	}
 
 	// Obter streams
 	const streamlist = video_config_media['streams'];
