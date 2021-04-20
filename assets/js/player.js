@@ -104,153 +104,153 @@ window.addEventListener("message", function (e) {
 		http.send(null);
 	}
 
-			//Se o episodio não for apenas para premium pega as urls de um jeito mais facil
-			if (is_ep_premium_only == false) {
-				function linkDownload(id) {		
-					console.log('- Baixando: ', r[id])
-					video_dash_playlist_url_old = player_current_playlist.replace("master.m3u8", "manifest.mpd").replace(player_current_playlist.split("/")[2], "dl.v.vrv.co").replace("evs1", "evs");
-					video_dash_playlist_url = player_current_playlist.replace(player_current_playlist.split("/")[2], "v.vrv.co").replace("evs1", "evs");
+			
+	// Carregar player assim que encontrar as URLs dos m3u8.
+	Promise.all(promises).then(() => {
+		for (let idx of [1, 0, 2, 3, 4])
+			sources.push({ file: video_m3u8_array[idx], label: r[idx] + (idx<2 ? '<sup><sup>HD</sup></sup>' : '')});
+		startPlayer();
+	});
 
-					$.ajax({
-						async: true,
-						type: "GET",
-						url: video_dash_playlist_url_old,
-						success: (result, status, xhr) => {
-							var params_download_link = htmlDecode(pegaString(xhr.responseText, '.m4s?', '"'));
-							if (!params_download_link)
-								return linkDownload(id);
-						
-							var video_code = video_dash_playlist_url.split(",")[parseInt(id)+1];
-							var video_mp4_url = video_dash_playlist_url.split("_,")[0] + "_" + video_code + params_download_link;
-							
-							u[id] = video_mp4_url;
-							pM1[id].resolve();
-						}
-					});
-				}
-				for (id in r)
-					linkDownload(id);
-			}
-
-			//Se o episodio for apenas para usuarios premium
-			if (is_ep_premium_only == true) {
-				function linkDownload(id) {
-					console.log('- Baixando: ', r[id])
-					var video_dash_playlist_url_no_clipe = video_m3u8_array[id].replace("/clipFrom/0000/clipTo/" + video_config_media['metadata']['duration'] + "/index.m3u8", ",.urlset/manifest.mpd");
-					var video_dash_playlist_url = video_dash_playlist_url_no_clipe.replace(video_dash_playlist_url_no_clipe.split("_")[0] + "_", video_dash_playlist_url_no_clipe.split("_")[0] + "_,");
-
-					function cb(result, status, xhr) {
-						var params_download_link = htmlDecode(pegaString(xhr.responseText, '.m4s?', '"'));
-						if (!params_download_link)
-							return linkDownload(id);
-						var video_mp4_url_old = video_dash_playlist_url.split("_,")[0] + "_" + video_dash_playlist_url.split(",")[1] + params_download_link;
-						var video_mp4_url = video_mp4_url_old.replace("dl.v.vrv.co", "v.vrv.co");
-						u[id] = video_mp4_url;
-						pM1[id].resolve();
-					};
-
-					$.ajax({
-						async: true,
-						type: "GET",
-						url: video_dash_playlist_url,
-						success: cb
-					});
-				}
-
-				for (id in r)
-					linkDownload(id);
-			}
-
-			let sources = [];
-			Promise.all(p1).then(() => {
-				for (id in r)
-					addSource(u[id], id, false);
-				Promise.all(p2).then(() => {
-					for (i of [1, 0, 2, 3, 4]) {
-						const idx = i;
-						p2[idx].then(msg => {
-							if (msg) sources.push({ file: u[idx], label: r[idx] + '<sup><sup>Não encontrado</sup></sup>'})
-							else sources.push({ file: u[idx], label: r[idx] + (idx<2 ? '<sup><sup>HD</sup></sup>' : '')})
-						});
-					}
-
-					Promise.all(p2).then(()=>startPlayer());
-				})
-			})
-
-			function startPlayer() {
-				// Inicia o player
-				var playerInstance = jwplayer("player_div")
-				playerInstance.setup({
+	const thumbs = up_next ? video_config_media['metadata']['up_next']['thumbnails'] : [];
+	function startPlayer() {
+		// Inicia o player
+		let playerInstance = jwplayer("player_div")
+		playerInstance.setup({
+			"playlist": [
+				{ 
 					"title": episode_title,
 					"description": video_config_media['metadata']['title'],
-					"sources": sources,
 					"image": video_config_media['thumbnail']['url'],
-					"width": "100%",
-					"height": "100%",
-					"autostart": false,
-					"displayPlaybackLabel": true,
-					"primary": "html5"
+					"sources": sources,
+				},
+				up_next_enable && up_next ? {
+					"autoplaytimer": 0,
+            		"title": video_config_media['metadata']['up_next']['display_episode_number'] + ' - ' + video_config_media['metadata']['up_next']['series_title'],
+					"file": "https://i.imgur.com/8wEeX0R.mp4",
+					"repeat": true,
+            		"image": thumbs[thumbs.length-1].url
+				} : {}
+			],
+			"related": {displayMode: 'none'},
+			"nextupoffset": -up_next_cooldown,
+			"width": "100%",
+			"height": "100%",
+			"autostart": false,
+			"displayPlaybackLabel": true,
+			"primary": "html5",
+			"playbackRateControls": [0.5, 0.75, 1, 1.25, 1.5, 2]
+		}).on('playlistItem', e => {
+			// tocar próximo ep
+			if (e.index > 0 && up_next_enable && up_next){
+				jwplayer().setControls(false);
+				jwplayer().setConfig({
+					repeat: true
 				});
+				jwplayer().play();
+				localStorage.setItem("next_up", true);
+				localStorage.setItem("next_up_fullscreen", jwplayer().getFullscreen());
+				window.top.location.href = up_next;
+			}
+		})
 
-				//Variaveis para o botao de baixar.
-				var button_iconPath = "assets/icon/download_icon.svg";
-				var button_tooltipText = "Baixar Vídeo";
-				var buttonId = "download-video-button";
+		// Variaveis para os botões.
+		let update_iconPath = "assets/icon/update_icon.svg";
+		let update_id = "update-video-button";
+		let update_tooltipText = "Atualização Disponível";
+		let download_iconPath = "assets/icon/download_icon.svg";
+		let download_id = "download-video-button";
+		let download_tooltipText = "Download";
+		let didDownload = false;
 
-				//funcion ao clicar no botao de fechar o menu de download
-				document.querySelectorAll("button.close-modal")[0].onclick = () => {
-					document.querySelectorAll(".modal")[0].style.visibility = "hidden";
-				};
+		// funcion ao clicar no botao de fechar o menu de download
+		const downloadModal = document.querySelectorAll(".modal")[0];
+		const updateModal = document.querySelectorAll(".modal")[1];
+		document.querySelectorAll("button.close-modal")[0].onclick = () =>
+			downloadModal.style.visibility = "hidden";
+		document.querySelectorAll("button.close-modal")[1].onclick = () =>
+			updateModal.style.visibility = "hidden";
+		if (user_lang[0] === 'ptBR')
+		document.getElementById('changelog').innerHTML = `<strong>Atualização disponível:</strong><br/>
+			- Add card <strong>A seguir</strong> & opções:<br/>
+				automaticamente muda para o próximo episódio<br/>
+			- Fix nome das series (ultimos eps)`;
 
-				//function ao clicar no botao de baixar
-				function download_ButtonClickAction() {
-					//Se estiver no mobile, muda um pouco o design do menu
-					if (jwplayer().getEnvironment().OS.mobile == true) {
-						document.querySelectorAll(".modal")[0].style.height = "170px";
-						document.querySelectorAll(".modal")[0].style.overflow = "auto";
-					}
+		// function ao clicar no botao de baixar
+		function download_ButtonClickAction() {
+			// Se estiver no mobile, muda um pouco o design do menu
+			if (jwplayer().getEnvironment().OS.mobile == true) {
+				downloadModal.style.height = "170px";
+				downloadModal.style.overflow = "auto";
+			}
+			
+			// Mostra o menu de download
+			downloadModal.style.visibility = downloadModal.style.visibility === "hidden" ? "visible" : "hidden";
+			
+			// Carrega os downloads
+			if (!didDownload) {
+				didDownload = true;
+				console.log('[CR Premium] Baixando sources:')
+				for (let id of [1,0,2,3,4])
+					linkDownload(id);
+			}
+		}
+		// function ao clicar no botao de update
+		function update_ButtonClickAction() {
+			if (jwplayer().getEnvironment().OS.mobile == true) {
+				updateModal.style.height = "170px";
+				updateModal.style.overflow = "auto";
+			}
+			updateModal.style.visibility = updateModal.style.visibility === "hidden" ? "visible" : "hidden";
+		}
 
-					//Mostra o menu de download
-					document.querySelectorAll(".modal")[0].style.visibility = "visible";
-					return;
-				}
+		playerInstance.addButton(download_iconPath, download_tooltipText, download_ButtonClickAction, download_id);
+		if (version !== "1.0.3")
+			playerInstance.addButton(update_iconPath, update_tooltipText, update_ButtonClickAction, update_id);
 
-				playerInstance.addButton(button_iconPath, button_tooltipText, () => download_ButtonClickAction(), buttonId);
+		// Definir URL e Tamanho na lista de download
+		for (let id of [1,0,2,3,4]) {
+			dlUrl[id].href = video_mp4_array[id];
+			dlUrl[id].download = video_config_media['metadata']['title'];
+		}
 
-				// Definir URL e Tamanho na lista de download
-				for (let id in r) {
-					document.getElementById(r[id] + "_down_url").href = u[id];
-					document.getElementById(r[id] + "_down_size").innerText = s[id];
-				}
+		// Funções para o player
+		jwplayer().on('ready', e => {
+			// Seta o tempo do video pro salvo no localStorage		
+			if (localStorage.getItem(video_id) != null) {
+				const t = localStorage.getItem(video_id);
+				document.getElementsByTagName("video")[0].currentTime = t >= 5 ? t - 5 : t;
+			}
+			// Mantem fullscreen + autoplay caso tenha sido redirecionado usando a função "A seguir"/"Next up"
+			if (localStorage.getItem("next_up") === "true") {
+				localStorage.setItem("next_up", false)
+				// jwplayer().setFullscreen(localStorage.getItem("next_up_fullscreen")); <- problemas com fullscreen automatico
+				jwplayer().play();
+			}
 
-				//Funções para o player
-				jwplayer().on('ready', e => {
-					//Seta o tempo do video pro salvo no localStorage		
-					if (localStorage.getItem(video_id) != null) {
-						document.getElementsByTagName("video")[0].currentTime = localStorage.getItem(video_id);
-					}
-					document.body.querySelector(".loading_container").style.display = "none";
+			document.body.querySelector(".loading_container").style.display = "none";
+		});
+
+		// Mostra uma tela de erro caso a legenda pedida não exista.
+		jwplayer().on('error', e => {
+			console.log(e)
+			codes = { 232011: "https://i.imgur.com/OufoM33.mp4" };
+			if (codes[e.code]) {
+				jwplayer().load({
+					file: codes[e.code]
 				});
-				//Mostra uma tela de erro caso a legenda pedida não exista.
-				jwplayer().on('error', e => {
-					console.log(e)
-					if (e.code == 232011) {
-						jwplayer().load({
-							file: "https://i.imgur.com/OufoM33.mp4"
-						});
-						jwplayer().setControls(false);
-						jwplayer().setConfig({
-							repeat: true
-						});
-						jwplayer().play();
-					}
+				jwplayer().setControls(false);
+				jwplayer().setConfig({
+					repeat: true
 				});
-				
-				//Fica salvando o tempo do video a cada 5 segundos.
-				setInterval(() => {
-					if (jwplayer().getState() == "playing")
-						localStorage.setItem(video_id, jwplayer().getPosition());
+				jwplayer().play();
+			}
+		});
+		
+		// Fica salvando o tempo do video a cada 7 segundos.
+		setInterval(() => {
+			if (jwplayer().getState() == "playing")
+				localStorage.setItem(video_id, jwplayer().getPosition());
 		}, 7000);
 	}
 
