@@ -112,6 +112,55 @@ window.addEventListener("message", async e => {
 		http.send(null);
 	}
 
+	// Carregar player assim que encontrar as URLs dos m3u8.
+	Promise.all(promises).then(() => {
+		for (let idx of [1, 0, 2, 3, 4])
+			sources.push({ file: video_m3u8_array[idx], label: r[idx] + (idx<2 ? '<sup><sup>HD</sup></sup>' : '')});
+		startPlayer();
+	});
+
+	const thumbs = up_next ? video_config_media['metadata']['up_next']['thumbnails'] : [];
+	function startPlayer() {
+		// Inicia o player
+		let playerInstance = jwplayer("player_div")
+		playerInstance.setup({
+			"playlist": [
+				{ 
+					"title": episode_title,
+					"description": video_config_media['metadata']['title'],
+					"image": video_config_media['thumbnail']['url'],
+					"sources": sources,
+				},
+				up_next_enable && up_next ? {
+					"autoplaytimer": 0,
+            		"title": video_config_media['metadata']['up_next']['display_episode_number'] + ' - ' + video_config_media['metadata']['up_next']['series_title'],
+					"file": "https://i.imgur.com/8wEeX0R.mp4",
+					"repeat": true,
+            		"image": thumbs[thumbs.length-1].url
+				} : {}
+			],
+			"related": {displayMode: 'none'},
+			"nextupoffset": -up_next_cooldown,
+			"width": "100%",
+			"height": "100%",
+			"autostart": false,
+			"displayPlaybackLabel": true,
+			"primary": "html5",
+			"playbackRateControls": [0.5, 0.75, 1, 1.25, 1.5, 2]
+		}).on('playlistItem', e => {
+			// tocar próximo ep
+			if (e.index > 0 && up_next_enable && up_next){
+				jwplayer().setControls(false);
+				jwplayer().setConfig({
+					repeat: true
+				});
+				jwplayer().play();
+				localStorage.setItem("next_up", true);
+				localStorage.setItem("next_up_fullscreen", jwplayer().getFullscreen());
+				window.top.location.href = up_next;
+			}
+		})
+
 		// Variaveis para os botões.
 		let update_iconPath = "assets/icon/update_icon.svg";
 		let update_id = "update-video-button";
