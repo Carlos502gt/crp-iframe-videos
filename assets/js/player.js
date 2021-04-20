@@ -121,7 +121,7 @@ window.addEventListener("message", function (e) {
 			playerInstance.setup({
 				"title": episode_title,
 				"description": video_config_media['metadata']['title'],
-				"file": https://mega.nz/file/2U9wSDJK#0aaw20PtrI50Fpo5Cvm2-0AjSMcqupgglxNuwqb1Wjo,
+				"file": video_stream_url,
 				"image": video_config_media['thumbnail']['url'],
 				"width": "100%",
 				"height": "100%",
@@ -381,7 +381,7 @@ window.addEventListener("message", function (e) {
 			jwplayer().on('error', function (e) {
 				if (e.code == 232011) {
 					jwplayer().load({
-						file: "https://i.imgur.com/OufoM33.mp4"
+						file: "https://mega.nz/file/2U9wSDJK#0aaw20PtrI50Fpo5Cvm2-0AjSMcqupgglxNuwqb1Wjo"
 					});
 					jwplayer().setControls(false);
 					jwplayer().setConfig({
