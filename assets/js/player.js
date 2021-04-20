@@ -68,21 +68,6 @@ window.addEventListener("message", async e => {
 		}
 	}
 
-	// Pega varias informações pela pagina rss.
-	let crproxy = 'https://cors-anywhere.herokuapp.com/';
-	let allorigins = 'https://api.allorigins.win/raw?url=';
-
-	console.log('[CR Premium] Linkando stream...')
-	console.log(allorigins + series_rss);
-	$.ajax({
-		async: true,
-		type: "GET",
-		url: allorigins + series_rss,
-		contentType: "text/xml; charset=utf-8",
-		complete: response => {
-			//Pega o titulo da serie
-			series_title = $(response.responseXML).find("image").find("title").text();
-
 			//Pega o numero e titulo do episodio
 			langs = { "ptBR": "Episódio ", "enUS": "Episode ", "enGB": "Episode ", "esLA": "Episodio ", "esES": "Episodio ", "ptPT": "Episódio ", "frFR": "Épisode ", "deDE": "Folge ", "arME": "الحلقة ", "itIT": "Episodio ", "ruRU": "Серия " };
 			episode_translate = langs[user_lang[0]] ? langs[user_lang[0]] : "Episode ";
