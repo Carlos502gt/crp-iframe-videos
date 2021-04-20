@@ -22,14 +22,30 @@ window.addEventListener("message", function (e) {
 	else
 		var series_rss = "https://www.crunchyroll.com/" + series_url.split("/")[4] + ".rss";
 
-	for (var i = 0; i < video_config_media['streams'].length; i++) {
-		if (video_config_media['streams'][i].format == 'trailer_hls' && video_config_media['streams'][i].hardsub_lang == user_lang)
+	// Obter streams
+	const streamlist = video_config_media['streams'];
+	for (let stream of streamlist) {
+		// Premium                                                             vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv - versões "International Dub"
+		if (stream.format == 'trailer_hls' && stream.hardsub_lang == user_lang || (streamlist.length < 15 && stream.hardsub_lang === null))
 			if (rows_number <= 4) {
-				video_m3u8_array.push(video_config_media['streams'][i].url.replace("clipTo/120000/", "clipTo/" + video_config_media['metadata']['duration'] + "/").replace(video_config_media['streams'][i].url.split("/")[2], "dl.v.vrv.co"));
+				// video_m3u8_array.push(await getDirectStream(stream.url, rows_number));
+				video_mp4_array.push(getDirectFile(stream.url));
 				rows_number++;
+				// mp4 + resolve temporario até pegar link direto da m3u8
+				if (rows_number > 4) {
+					video_m3u8_array = video_mp4_array;
+					for (let i in r) {
+						const idx = i;
+						setTimeout(() => request[idx].resolve(), 400);
+					}
+					break;
+				}
 			}
-		if (video_config_media['streams'][i].format == 'adaptive_hls' && video_config_media['streams'][i].hardsub_lang == user_lang) {
-			video_stream_url = video_config_media['streams'][i].url.replace("pl.crunchyroll.com", "dl.v.vrv.co");
+		// Padrão
+		if (stream.format == 'adaptive_hls' && stream.hardsub_lang == user_lang) {
+			video_stream_url = stream.url;
+			video_m3u8_array = await m3u8ListFromStream(video_stream_url);
+			video_mp4_array = mp4ListFromStream(video_stream_url);
 			break;
 		}
 	}
