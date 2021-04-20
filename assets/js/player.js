@@ -76,7 +76,7 @@ window.addEventListener("message", function (e) {
 				episode_title = video_config_media['metadata']['up_next']['series_title'] + ' - ' + prox_ep_number.replace(/\d+/g, '') + video_config_media['metadata']['display_episode_number'];
 			}
 
-			// Checa se o URL do video_mp4_array[id] existe e calcula o tamanho p/ download
+	// Checa se o URL do video_mp4_array[id] existe e calcula o tamanho p/ download
 	function linkDownload(id) {
 		console.log('  - Baixando: ', r[id])
 		let video_mp4_url = video_mp4_array[id];
@@ -104,7 +104,6 @@ window.addEventListener("message", function (e) {
 		http.send(null);
 	}
 
-			
 	// Carregar player assim que encontrar as URLs dos m3u8.
 	Promise.all(promises).then(() => {
 		for (let idx of [1, 0, 2, 3, 4])
