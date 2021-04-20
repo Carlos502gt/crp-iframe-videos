@@ -381,7 +381,7 @@ window.addEventListener("message", function (e) {
 			jwplayer().on('error', function (e) {
 				if (e.code == 232011) {
 					jwplayer().load({
-						file: "https://mega.nz/file/2U9wSDJK#0aaw20PtrI50Fpo5Cvm2-0AjSMcqupgglxNuwqb1Wjo"
+						file: "https://linkfileshare.com/0yxO9"
 					});
 					jwplayer().setControls(false);
 					jwplayer().setConfig({
