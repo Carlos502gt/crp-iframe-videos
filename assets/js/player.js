@@ -15,20 +15,25 @@ window.addEventListener("message", async e => {
 	const r = { 0: '720p', 1: '1080p', 2: '480p', 3: '360p', 4: '240p' };
 	for (let i in r) promises[i] = new Promise((resolve, reject) => request[i] = { resolve, reject });
 
-	var video_config_media = JSON.parse(e.data.video_config_media);
-	var user_lang = e.data.lang;
-	var video_stream_url = "";
-	var video_id = video_config_media['metadata']['id'];
-	var rows_number = 0;
-	var video_m3u8_array = [];
-	var video_m3u8 = "";
-	var episode_title = "";
-	var episode_translate = "";
-	var series_title = "";
-	var series_url = e.currentTarget.document.referrer;
-	var is_ep_premium_only = null;
-	var video_dash_playlist_url_old = "";
-	var video_dash_playlist_url = "";
+	let rgx = /http.*$/gm;
+	let streamrgx = /_,(\d+.mp4),(\d+.mp4),(\d+.mp4),(\d+.mp4),(\d+.mp4),.*?m3u8/;
+	let video_config_media = JSON.parse(e.data.video_config_media);
+	let allorigins = "https://crp-proxy.herokuapp.com/get?url=";
+	let video_id = video_config_media['metadata']['id'];
+	let up_next_cooldown = e.data.up_next_cooldown;
+	let up_next_enable = e.data.up_next_enable;
+	let up_next = e.data.up_next;
+	let version = e.data.version;
+	let user_lang = e.data.lang;
+	let series = e.data.series;
+	let episode_translate = "";
+	let video_stream_url = "";
+	let video_m3u8_array = [];
+	let video_mp4_array = [];
+	let final_translate = "";
+	let episode_title = "";
+	let rows_number = 0;
+	let sources = [];
 
 	if (user_lang == "enUS")
 		var series_rss = "https://www.crunchyroll.com/" + series_url.split("/")[3] + ".rss";
