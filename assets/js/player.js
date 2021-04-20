@@ -1,6 +1,19 @@
-window.addEventListener("message", function (e) {
-	//console.log(e.currentTarget.document.referrer);
+window.addEventListener("message", async e => {
+
+	// Meta para testar o player APENAS em localhost
+	if (window.location.href == "http://127.0.0.1:5500/") {
+		let meta = document.createElement('meta');
+		meta.httpEquiv = "Content-Security-Policy";
+		meta.content = "upgrade-insecure-requests";
+		document.getElementsByTagName('head')[0].appendChild(meta);
+	}
+
 	console.log('[CR Premium] Player encontrado!')
+
+	// Variáveis principais
+	const promises=[], request = [];
+	const r = { 0: '720p', 1: '1080p', 2: '480p', 3: '360p', 4: '240p' };
+	for (let i in r) promises[i] = new Promise((resolve, reject) => request[i] = { resolve, reject });
 
 	var video_config_media = JSON.parse(e.data.video_config_media);
 	var user_lang = e.data.lang;
