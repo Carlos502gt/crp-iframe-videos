@@ -68,16 +68,19 @@ window.addEventListener("message", async e => {
 		}
 	}
 
-			//Pega o numero e titulo do episodio
-			langs = { "ptBR": "Episódio ", "enUS": "Episode ", "enGB": "Episode ", "esLA": "Episodio ", "esES": "Episodio ", "ptPT": "Episódio ", "frFR": "Épisode ", "deDE": "Folge ", "arME": "الحلقة ", "itIT": "Episodio ", "ruRU": "Серия " };
-			episode_translate = langs[user_lang[0]] ? langs[user_lang[0]] : "Episode ";
+	// Pega o numero e titulo do episodio
+	const epLangs = { "ptBR": "Episódio", "enUS": "Episode", "enGB": "Episode", "esLA": "Episodio", "esES": "Episodio", "ptPT": "Episódio", "frFR": "Épisode", "deDE": "Folge", "arME": "الحلقة", "itIT": "Episodio", "ruRU": "Серия" };
+	const fnLangs = { "ptBR": "FINAL", "enUS": "FINAL", "enGB": "FINAL", "esLA": "FINAL", "esES": "FINAL", "ptPT": "FINAL", "frFR": "FINALE", "deDE": "FINALE", "arME": "نهائي", "itIT": "FINALE", "ruRU": "ФИНАЛЬНЫЙ" };
+	episode_translate = `${epLangs[user_lang[0]] ? epLangs[user_lang[0]] : "Episode"} `;
+	final_translate   = ` (${fnLangs[user_lang[0]] ? fnLangs[user_lang[0]] : "FINAL"})`;
 
-			if (video_config_media['metadata']['up_next'] == undefined)
-				episode_title = series_title + ' - ' + episode_translate + video_config_media['metadata']['display_episode_number'];
-			else {
-				var prox_ep_number = video_config_media['metadata']['up_next']['display_episode_number'];
-				episode_title = video_config_media['metadata']['up_next']['series_title'] + ' - ' + prox_ep_number.replace(/\d+/g, '') + video_config_media['metadata']['display_episode_number'];
-			}
+	if (series) {
+		episode_title = series + ' - ' + episode_translate + video_config_media['metadata']['display_episode_number'];
+	} else if (video_config_media['metadata']['up_next']) {
+		let prox_ep_number = video_config_media['metadata']['up_next']['display_episode_number'];
+		episode_title = video_config_media['metadata']['up_next']['series_title'] + ' - ' + prox_ep_number.replace(/\d+|OVA/g, '') + video_config_media['metadata']['display_episode_number'];
+	} else
+		episode_title = episode_translate + video_config_media['metadata']['display_episode_number'] + final_translate;
 
 	// Checa se o URL do video_mp4_array[id] existe e calcula o tamanho p/ download
 	function linkDownload(id) {
