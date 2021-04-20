@@ -50,26 +50,6 @@ window.addEventListener("message", function (e) {
 		}
 	}
 
-	video_m3u8 = '#EXTM3U' +
-		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=4112345,RESOLUTION=1280x720,FRAME-RATE=23.974,CODECS="avc1.640028,mp4a.40.2"' +
-		'\n' + video_m3u8_array[0] +
-		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=8098235,RESOLUTION=1920x1080,FRAME-RATE=23.974,CODECS="avc1.640028,mp4a.40.2"' +
-		'\n' + video_m3u8_array[1] +
-		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2087088,RESOLUTION=848x480,FRAME-RATE=23.974,CODECS="avc1.4d401f,mp4a.40.2"' +
-		'\n' + video_m3u8_array[2] +
-		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1090461,RESOLUTION=640x360,FRAME-RATE=23.974,CODECS="avc1.4d401e,mp4a.40.2"' +
-		'\n' + video_m3u8_array[3] +
-		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=559942,RESOLUTION=428x240,FRAME-RATE=23.974,CODECS="avc1.42c015,mp4a.40.2"' +
-		'\n' + video_m3u8_array[4];
-
-
-	if (is_ep_premium_only = (video_stream_url == "")) {
-		var blob = new Blob([video_m3u8], {
-			type: "text/plain; charset=utf-8"
-		});
-		video_stream_url = URL.createObjectURL(blob) + "#.m3u8";
-	}
-
 	// Pega varias informações pela pagina rss.
 	let crproxy = 'https://cors-anywhere.herokuapp.com/';
 	let allorigins = 'https://api.allorigins.win/raw?url=';
@@ -96,65 +76,33 @@ window.addEventListener("message", function (e) {
 				episode_title = video_config_media['metadata']['up_next']['series_title'] + ' - ' + prox_ep_number.replace(/\d+/g, '') + video_config_media['metadata']['display_episode_number'];
 			}
 
-			// Procura URLs
-			const r = { 0: '720p', 1: '1080p', 2: '480p', 3: '360p', 4: '240p' };
-			const u = {}, p1=[], p2= [], pM1 = [], pM2 = [], s = [];
-			for (let i in r) p1[i] = new Promise((resolve, reject) => pM1[i] = { resolve, reject });
-			for (let i in r) p2[i] = new Promise((resolve, reject) => pM2[i] = { resolve, reject });
-			player_current_playlist = video_stream_url;
+			// Checa se o URL do video_mp4_array[id] existe e calcula o tamanho p/ download
+	function linkDownload(id) {
+		console.log('  - Baixando: ', r[id])
+		let video_mp4_url = video_mp4_array[id];
 
-			//function que pega algo dentro dentro do html.
-			function pegaString(str, first_character, last_character) {
-				if (str.match(first_character + "(.*?)" + last_character) == null) {
-					return null;
-				} else {
-					new_str = str.match(first_character + "(.*?)" + last_character)[1].trim()
-					return (new_str)
+		let fileSize = "";
+		let http = (window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP"));
+		http.onreadystatechange = () => {
+			if (http.readyState == 4 && http.status == 200) {
+				fileSize = http.getResponseHeader('content-length');
+				if (!fileSize)
+					return setTimeout(() => linkDownload(id), 5000);
+				else {
+					let sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
+					if (fileSize == 0) return console.log('addSource#fileSize == 0');
+					let i = parseInt(Math.floor(Math.log(fileSize) / Math.log(1024)));
+					if (i == 0) return console.log('addSource#i == 0');
+					let return_fileSize = (fileSize / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
+					dlSize[id].innerText = return_fileSize;
+					return console.log(`[CR Premium] Source adicionado: ${r[id]} (${return_fileSize})`);
 				}
-			}
-
-			//function que decodifica caracteres html de uma string
-			function htmlDecode(input) {
-				var e = document.createElement('textarea');
-				e.innerHTML = input;
-				// handle case of empty input
-				return e.childNodes.length === 0 ? "" : e.childNodes[0].nodeValue;
-			}
-
-			function addSource(url, id, needs_proxy) {
-				var fileSize = "";
-				var http = (window.XMLHttpRequest ? new XMLHttpRequest() : new ActiveXObject("Microsoft.XMLHTTP"));
-				if (needs_proxy) final_url = crproxy + url;
-				else final_url = url;
-
-				http.onreadystatechange = xhr => {
-					if (http.readyState == 4 && http.status == 200) {
-						fileSize = http.getResponseHeader('content-length');
-						if (!fileSize && !needs_proxy) {
-							console.log('- Source', r[id], 'precisa de proxy...')
-							addSource(url, id, true);
-						} else {
-							var sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-							if (fileSize == 0) return pM2[id].reject('addSource#fileSize == 0');
-							var i = parseInt(Math.floor(Math.log(fileSize) / Math.log(1024)));
-							if (i == 0) return pM2[id].reject('addSource#i== 0');
-							var return_fileSize = (fileSize / Math.pow(1024, i)).toFixed(1) + ' ' + sizes[i];
-
-							console.log('[CR Premium] Adicionando source: ', r[id]);
-							pM2[id].resolve();
-							s[id] = return_fileSize;
-						}
-					} else if (http.readyState == 4 && http.status===0) {
-						console.log('- Source', r[id], 'precisa de proxy...')
-						addSource(url, id, true);
-					} else if (needs_proxy) {
-						console.log('Falha ao encontrar com proxy', r[id]);
-						return pM2[id].resolve('Falha com proxy')
-					}
-				}
-				http.open("HEAD", final_url, true);
-				http.send(null);
-			}
+			} else if (http.readyState == 4)
+				return setTimeout(() => linkDownload(id), 5000);
+		}
+		http.open("HEAD", video_mp4_url, true);
+		http.send(null);
+	}
 
 			//Se o episodio não for apenas para premium pega as urls de um jeito mais facil
 			if (is_ep_premium_only == false) {
@@ -303,8 +251,96 @@ window.addEventListener("message", function (e) {
 				setInterval(() => {
 					if (jwplayer().getState() == "playing")
 						localStorage.setItem(video_id, jwplayer().getPosition());
-				}, 5000);
+		}, 7000);
+	}
+
+	/* ~~~~~~~~~~ FUNÇÕES ~~~~~~~~~~ */
+	function getAllOrigins(url) {
+		return new Promise(async (resolve, reject) => {
+			await $.ajax({
+				async: true,
+				type: "GET",
+				url: allorigins + encodeURIComponent(url),
+				responseType: 'json'
+			})
+			.then(res=>{
+				resolve(res.contents)
+			})
+			.catch(err=>reject(err));
+		})
+	}
+
+	// ---- MP4 ---- (baixar)
+	// Obtem o link direto pelo trailer (premium)
+	function getDirectFile(url) {
+		return url.replace(/\/clipFrom.*?index.m3u8/, '').replace('_,', '_').replace(url.split("/")[2], "fy.v.vrv.co");
+	}
+
+	// Obtem o link direto pelo padrão (gratis)
+	function mp4ListFromStream(url) {
+		const cleanUrl = url.replace('evs1', 'evs').replace(url.split("/")[2], "fy.v.vrv.co");
+		const res = [];
+		for (let i in r)
+			res.push(cleanUrl.replace(streamrgx, `_$${(parseInt(i)+1)}`))
+		return res;
+	}
+
+	// ---- M3U8 ---- (assistir)
+	// Obtem o link direto pelo trailer (premium) - to do
+	function getDirectStream(url, idx) {
+		setTimeout(() => request[idx].resolve(), 400);
+	}
+
+	// Obtem o link direto pelo padrão (gratis)
+	async function m3u8ListFromStream(url) {
+		let m3u8list = []
+		const master_m3u8 = await getAllOrigins(url);
+
+		if (master_m3u8) {
+			streams = master_m3u8.match(rgx)
+			m3u8list = streams.filter((el, idx) => idx%2===0) // %2 === 0 pois há cdns da akamai e da cloudflare
+		} else {
+			for (let i in r) {
+				const idx = i;
+				setTimeout(() => request[idx].reject('Manifest m3u8ListFromStream#master_m3u8.length === 0'), 400);
 			}
+			return [];
 		}
-	});
+
+		const res = [];
+		for (let i in m3u8list) {
+			const video_m3u8 = await getAllOrigins(m3u8list[i]);
+			m3u8list[i] = blobStream(video_m3u8);
+		}
+		
+		res.push(buildM3u8(m3u8list));
+		for (let i in r) {
+			const idx = i;
+			setTimeout(() => request[idx].resolve(), 400);
+		}
+
+		return res;
+	}
+
+	function blobStream(stream) {
+		const blob = new Blob([stream], {
+			type: "text/plain; charset=utf-8"
+		});
+		return URL.createObjectURL(blob) + "#.m3u8";
+	}
+
+	function buildM3u8(m3u8list) {
+		const video_m3u8 = '#EXTM3U' +
+		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=4112345,RESOLUTION=1280x720,FRAME-RATE=23.974,CODECS="avc1.640028,mp4a.40.2"' +
+		'\n' + m3u8list[0] +
+		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=8098235,RESOLUTION=1920x1080,FRAME-RATE=23.974,CODECS="avc1.640028,mp4a.40.2"' +
+		'\n' + m3u8list[1] +
+		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=2087088,RESOLUTION=848x480,FRAME-RATE=23.974,CODECS="avc1.4d401f,mp4a.40.2"' +
+		'\n' + m3u8list[2] +
+		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=1090461,RESOLUTION=640x360,FRAME-RATE=23.974,CODECS="avc1.4d401e,mp4a.40.2"' +
+		'\n' + m3u8list[3] +
+		'\n#EXT-X-STREAM-INF:PROGRAM-ID=1,BANDWIDTH=559942,RESOLUTION=428x240,FRAME-RATE=23.974,CODECS="avc1.42c015,mp4a.40.2"' +
+		'\n' + m3u8list[4];
+		return blobStream(video_m3u8);
+	}
 });
