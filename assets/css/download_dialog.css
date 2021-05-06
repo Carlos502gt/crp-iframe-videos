@@ -37,7 +37,7 @@
     right: 0;
     border-radius: 3px;
     margin: auto;
-    padding: 20px;
+    padding: 30px;
     -webkit-filter: url(#blur);
     filter: url(#blur);
     -webkit-transform: translate3d(0, -900%, 0);
@@ -58,7 +58,7 @@
 	display: table;
     vertical-align: middle;
     height: 55px;
-    width: 100%;
+    width: 70%;
 }
 .partdditem {
     display: table-cell;
@@ -74,30 +74,13 @@
 	user-select: none;
 }
 
-.size {
-    color: #eee;
-    font-family: SFProDisplay-Regular;
-    font-size: 15px;
-    text-align: left;
-    width: 14%;
-    opacity: .7;
-}
-
-.size > img {
-    position: relative;
-    top: 4px;
-    min-width: 15px;
-    width: 15px;
-    max-width: 15px;
-}
-
 .quality {
     color: #eee;
     font-family: SFProDisplay-Semibold;
     font-size: 15px;
     width: 13%;
     text-align: left;
-    padding-left: 20px;
+    padding-left: 60px;
 }
 
 .quality > sup {
