@@ -23,7 +23,8 @@ window.addEventListener("message", function (e) {
 		var series_rss = "https://www.crunchyroll.com/" + series_url.split("/")[4] + ".rss";
 
 	for (var i = 0; i < video_config_media['streams'].length; i++) {
-		if (video_config_media['streams'][i].format == 'trailer_hls' && video_config_media['streams'][i].hardsub_lang == user_lang)
+                // Premium                                                                                                                 vvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvvv - versões "International Dub"
+		if (video_config_media['streams'][i].format == 'trailer_hls' && video_config_media['streams'][i].hardsub_lang == user_lang || (streamlist.length < 15 && stream.hardsub_lang === null))
 			if (rows_number <= 4) {
 				const url = video_config_media['streams'][i].url.replace(/\/clipFrom.*?index.m3u8/, '').replace('_,', '_').replace(video_config_media['streams'][i].url.split("/")[2], "fy.v.vrv.co");
 				video_m3u8_array.push(url);
